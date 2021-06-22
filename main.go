@@ -1,15 +1,41 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
+
+	_ "github.com/lib/pq"
+)
+
+const (
+	host     = "localhost"
+	port     = 5432
+	user     = "postgres"
+	password = "password"
+	dbname   = "todosbackend"
 )
 
 func main() {
+	// set up db connection
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s", host, port, user, password, dbname)
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+
+	defer closeConnection(db)
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("db connected")
+
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", listTodosHandler).Methods("GET")
@@ -34,4 +60,9 @@ func createTodosHandler(w http.ResponseWriter, r *http.Request) {
 func deleteTodosHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	fmt.Println("deleteTodosHandler")
+}
+
+func closeConnection(db *sql.DB) {
+	fmt.Println("closing connection...")
+	db.Close()
 }
